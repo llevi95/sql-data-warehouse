@@ -59,7 +59,7 @@ Develop SQL-based analytics to deliver detailed insights into:
 
 These insights empower stakeholders with key business metrics, enabling strategic decision-making.  
 
-For more details, refer to [docs/requirements.md](docs/requirements.md).
+For more details, refer to [docs/requirements.md](docs).
 
 ## 📂 Repository Structure
 ```
@@ -87,7 +87,7 @@ data-warehouse-project/
 ├── tests/                                    # Test scripts and quality files
 │
 ├── README.md                                 # Project overview and instructions
-├── LICENSE                             #       License information for the repository
+├── LICENSE                                   # License information for the repository
 ```
 ---
 
