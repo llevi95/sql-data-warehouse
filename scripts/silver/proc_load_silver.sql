@@ -1,3 +1,66 @@
+/*
+===============================================================================
+Stored Procedure: Rebuild & Load Silver Layer (Bronze -> Silver)
+===============================================================================
+Script Purpose:
+    This stored procedure rebuilds and populates the 'silver' schema
+    by transforming, cleansing, and enriching data from the 'bronze' layer.
+    For each table in the silver layer, the procedure:
+      1) DROPs the table if it exists,
+      2) CREATEs it with the defined structure,
+      3) INSERTs transformed data from the corresponding bronze table.
+
+Transformation Logic Summary:
+    • silver.crm_cust_info:
+        - Keeps the most recent record per customer (ROW_NUMBER window).
+        - Normalizes gender and marital status codes.
+        - Trims extra whitespace from text fields.
+    • silver.crm_prd_info:
+        - Derives cat_id from product key (first 5 chars).
+        - Replaces product line codes (M → Mountain, R → Road, etc.).
+        - Calculates prd_end_dt using LEAD() over prd_start_dt.
+    • silver.crm_sales_details:
+        - Converts integer date formats (YYYYMMDD) to DATE.
+        - Validates sales and price consistency.
+        - Auto-calculates missing or invalid sales values.
+    • silver.erp_loc_a101:
+        - Standardizes country names (DE → Germany, US/USA → United States).
+        - Cleans empty or null values to 'n/a'.
+    • silver.erp_cust_az12:
+        - Cleans up customer IDs (removes 'NAS' prefix).
+        - Nullifies invalid future birthdates.
+        - Normalizes gender labels (F/M → Female/Male).
+    • silver.erp_px_cat_g1v2:
+        - Straight copy from bronze with added dwh_create_date.
+
+Parameters:
+    None.
+    This stored procedure does not accept parameters or return values.
+
+Usage:
+    CALL silver.rebuild_and_load_silver();
+
+Execution Flow:
+    - Prints NOTICE messages per table with timing (start/end/duration).
+    - Can be safely re-run — each run rebuilds the silver tables from scratch.
+
+Dependencies:
+    - Requires the bronze schema to be fully loaded (use `bronze.rebuild_and_load_bronze()` first).
+    - Each bronze table must exist and contain data before this procedure runs.
+
+Output:
+    - All silver tables freshly created and populated.
+    - Each record receives a 'dwh_create_date' timestamp at insert time.
+
+Error Handling:
+    - Captures and logs SQL errors via NOTICE messages.
+    - Re-raises the error after reporting for visibility.
+
+Notes:
+    - Ensure the 'silver' schema exists (created automatically if missing).
+    - No file system access needed: all data transformations happen within PostgreSQL.
+===============================================================================
+*/
 CREATE SCHEMA IF NOT EXISTS silver;
 
 CREATE OR REPLACE PROCEDURE silver.rebuild_and_load_silver()
